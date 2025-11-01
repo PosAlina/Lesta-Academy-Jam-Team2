@@ -9,4 +9,7 @@ UCLASS()
 class ATP_PlayerController : public APlayerController
 {
 	GENERATED_BODY()
+
+public:
+	ATP_PlayerController() {}
 };
