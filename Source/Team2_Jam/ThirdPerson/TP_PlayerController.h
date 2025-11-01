@@ -1,7 +1,12 @@
-﻿#pragma once
+﻿// Copyright Epic Games, Inc. All Rights Reserved.
 
-class TP_PlayerController
+#pragma once
+
+#include "GameFramework/PlayerController.h"
+#include "TP_PlayerController.generated.h"
+
+UCLASS()
+class ATP_PlayerController : public APlayerController
 {
-public:
-	
+	GENERATED_BODY()
 };
