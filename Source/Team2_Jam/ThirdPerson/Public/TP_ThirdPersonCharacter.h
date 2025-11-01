@@ -39,23 +39,22 @@ class ATP_ThirdPersonCharacter : public ACharacter
 	/** Move Input Action */
 	UPROPERTY(EditAnywhere, BlueprintReadOnly, Category = Input, meta = (AllowPrivateAccess = "true"))
 	UInputAction* MoveAction;
-
+	
 	/** Look Input Action */
 	UPROPERTY(EditAnywhere, BlueprintReadOnly, Category = Input, meta = (AllowPrivateAccess = "true"))
-	UInputAction* LookAction;
+	UInputAction* CrouchAction;
 
 public:
-	ATP_ThirdPersonCharacter();
 	
+	ATP_ThirdPersonCharacter();
 
 protected:
 
 	/** Called for movement input */
 	void Move(const FInputActionValue& Value);
-
-	/** Called for looking input */
-	void Look(const FInputActionValue& Value);
-			
+	
+	/** Called for stop crouching */
+	void CrouchToggle(const FInputActionValue& Value);
 
 protected:
 
