@@ -44,14 +44,30 @@ class ATP_ThirdPersonCharacter : public ACharacter
 	UPROPERTY(EditAnywhere, BlueprintReadOnly, Category = Input, meta = (AllowPrivateAccess = "true"))
 	UInputAction* CrouchAction;
 
+	bool IsMovement = false;
+	bool IsRotation = false;
+	bool bIsChangeRotation = false;
+
+	FVector MovementDirection;
+	FRotator FirstRotation;
+
+	double RotationTickTime = 0.0f;
+
+	UPROPERTY(EditAnywhere, BlueprintReadWrite, Category = Rotation, meta = (AllowPrivateAccess = "true", Units = "s"))
+	double RotationTime = 5.0f;
+	
 public:
 	
 	ATP_ThirdPersonCharacter();
+
+	virtual void Tick(float DeltaTime) override;
 
 protected:
 
 	/** Called for movement input */
 	void Move(const FInputActionValue& Value);
+
+	void StopMoving();
 	
 	/** Called for stop crouching */
 	void CrouchToggle(const FInputActionValue& Value);

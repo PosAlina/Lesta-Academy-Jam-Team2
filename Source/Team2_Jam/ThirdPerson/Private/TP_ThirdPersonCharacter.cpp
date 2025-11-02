@@ -1,4 +1,4 @@
-// Copyright Epic Games, Inc. All Rights Reserved.
+﻿// Copyright Epic Games, Inc. All Rights Reserved.
 
 #include "../Public/TP_ThirdPersonCharacter.h"
 #include "Engine/LocalPlayer.h"
@@ -10,6 +10,7 @@
 #include "EnhancedInputComponent.h"
 #include "EnhancedInputSubsystems.h"
 #include "InputActionValue.h"
+#include "Components/SkeletalMeshComponent.h"
 
 DEFINE_LOG_CATEGORY(LogTemplateCharacter);
 
@@ -53,6 +54,39 @@ ATP_ThirdPersonCharacter::ATP_ThirdPersonCharacter()
 	// are set in the derived blueprint asset named ThirdPersonCharacter (to avoid direct content references in C++)
 }
 
+void ATP_ThirdPersonCharacter::Tick(float DeltaTime)
+{
+	Super::Tick(DeltaTime);
+	if (bIsChangeRotation && Controller)
+	{
+		RotationTickTime += DeltaTime;
+
+		if (USkeletalMeshComponent *CharacterMesh = GetMesh())
+		{
+			FRotator CurrentRotate = CharacterMesh->GetRelativeRotation();
+			FRotator FinishRotate;// = FRotator(0, -MovementDirection.X * (180 + FirstRotation.Yaw), 0);
+			if (MovementDirection.X == 1)
+			{
+				FinishRotate = FRotator(0, -90, 0);
+			}
+			else
+			{
+				FinishRotate = FRotator(0, 90, 0);
+			}
+			if (CurrentRotate == FinishRotate)
+			{
+				RotationTickTime = 0.0f;
+				bIsChangeRotation = false;
+			}
+			else
+			{
+				CharacterMesh->SetRelativeRotation(FMath::RInterpTo(FirstRotation,
+					FinishRotate, RotationTickTime / RotationTime, 1));
+			}
+		}
+	}
+}
+
 //////////////////////////////////////////////////////////////////////////
 // Input
 
@@ -74,20 +108,35 @@ void ATP_ThirdPersonCharacter::SetupPlayerInputComponent(UInputComponent* Player
 {
 	// Set up action bindings
 	if (UEnhancedInputComponent* EnhancedInputComponent = Cast<UEnhancedInputComponent>(PlayerInputComponent)) {
-		
-		// Jumping
-		EnhancedInputComponent->BindAction(JumpAction, ETriggerEvent::Started, this, &ACharacter::Jump);
-		EnhancedInputComponent->BindAction(JumpAction, ETriggerEvent::Completed, this, &ACharacter::StopJumping);
+
+		// add character's rotation for movement
+		if (USkeletalMeshComponent *CharacterMesh = GetMesh())
+		{
+			CharacterMesh->SetMobility(EComponentMobility::Movable);
+		}
 
 		// Moving
-		EnhancedInputComponent->BindAction(MoveAction, ETriggerEvent::Triggered, this, &ATP_ThirdPersonCharacter::Move);
-
-		//Crouching
+		MovementDirection = FVector(1, 0, 0);
+		IsMovement = false;
+		EnhancedInputComponent->BindAction(MoveAction, ETriggerEvent::Triggered,
+			this, &ATP_ThirdPersonCharacter::Move);
+		
 		if (GetMovementComponent())
 		{
-				GetMovementComponent()->GetNavAgentPropertiesRef().bCanCrouch = true;
+			GetMovementComponent()->GetNavAgentPropertiesRef().bCanJump = true;
+			GetMovementComponent()->GetNavAgentPropertiesRef().bCanCrouch = true;
 		}
-		EnhancedInputComponent->BindAction(CrouchAction, ETriggerEvent::Started, this, &ATP_ThirdPersonCharacter::CrouchToggle);
+
+		// Jumping
+		
+		EnhancedInputComponent->BindAction(JumpAction, ETriggerEvent::Ongoing,
+			this, &ACharacter::Jump);
+		EnhancedInputComponent->BindAction(JumpAction, ETriggerEvent::Completed,
+			this, &ACharacter::StopJumping);
+
+		//Crouching
+		EnhancedInputComponent->BindAction(CrouchAction, ETriggerEvent::Started,
+			this, &ATP_ThirdPersonCharacter::CrouchToggle);
 	}
 	else
 	{
@@ -104,16 +153,28 @@ void ATP_ThirdPersonCharacter::Move(const FInputActionValue& Value)
 	{
 		// find out which way is forward
 		const FRotator Rotation = Controller->GetControlRotation();
+		if (MovementDirection != MovementVector)
+		{
+			if (USkeletalMeshComponent *CharacterMesh = GetMesh())
+			{
+				FirstRotation = CharacterMesh->GetRelativeRotation();
+			}
+			bIsChangeRotation = true;
+			RotationTickTime = 0.0f;
+			MovementDirection = MovementVector;
+		}
+
 		const FRotator YawRotation(0, Rotation.Yaw, 0);
 
 		// get forward vector
-		const FVector ForwardDirection = FRotationMatrix(YawRotation).GetUnitAxis(EAxis::X);
+		const FVector ForwardDirection = YawRotation.Vector();
 
+		IsMovement = true;
 		// add movement 
 		AddMovementInput(ForwardDirection, MovementVector.X);
 	}
 }
-
+	
 void ATP_ThirdPersonCharacter::CrouchToggle(const FInputActionValue& Value)
 {
 	if (bIsCrouched)
