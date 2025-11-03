@@ -1,6 +1,5 @@
 # Игра для геймджема Леста Академии
 ## *Команда 2*
 
-TEST MESSAGE
-
-Test 2 message
+Проект заморожен.
+Следующая версия переехала в репозиторий: https://github.com/pospelowaalina-dev/Lesta-Academy-Jam-Team2
